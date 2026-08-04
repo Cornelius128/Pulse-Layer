@@ -1,69 +1,230 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Header } from '@/components/Header';
+import { PulseGauge } from '@/components/PulseGauge';
+import { ScoreTrendChart } from '@/components/ScoreTrendChart';
+import { LiveActivityFeed } from '@/components/LiveActivityFeed';
+import { TopAccountsTable } from '@/components/TopAccountsTable';
+import { AccountAnalysisModal } from '@/components/AccountAnalysisModal';
+import {
+  ShieldCheck,
+  ArrowRight,
+} from 'lucide-react';
+
+import { getApiUrl } from '@/lib/config';
+
+const DEMO_ACCOUNT_DEFAULT = 'GAK6E46MRRAG72MNDHNE54F2M43MVTK4Z2X7MHBCEEE4ZJ32FGGXX444';
 
 export default function Home() {
+  const [stats, setStats] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAccount, setSelectedAccount] = useState(DEMO_ACCOUNT_DEFAULT);
+  const [scoreData, setScoreData] = useState<any>(null);
+  const [historyData, setHistoryData] = useState<any[]>([]);
+  const [modalAccountData, setModalAccountData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch System Stats
+  const fetchStats = () => {
+    fetch(`${getApiUrl()}/api/stats`)
+      .then((res) => res.json())
+      .then((data) => setStats(data))
+      .catch((err) => console.error('Stats fetch error:', err));
+  };
+
+  // Fetch Account Score Data
+  const fetchAccountData = (acc: string) => {
+    setLoading(true);
+    setSelectedAccount(acc);
+
+    const apiUrl = getApiUrl();
+    Promise.all([
+      fetch(`${apiUrl}/api/score/${acc}`).then((r) => r.json()),
+      fetch(`${apiUrl}/api/history/${acc}`).then((r) => r.json()),
+    ])
+      .then(([scoreRes, historyRes]) => {
+        setScoreData(scoreRes);
+        if (historyRes.snapshots) setHistoryData(historyRes.snapshots);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to load account score data:', err);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchStats();
+    fetchAccountData(selectedAccount);
+    const interval = setInterval(fetchStats, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleInspectAccount = (acc: string) => {
+    fetch(`${getApiUrl()}/api/score/${acc}`)
+      .then((res) => res.json())
+      .then((data) => setModalAccountData(data))
+      .catch((err) => console.error(err));
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col font-sans transition-colors duration-200">
+      {/* Top Fixed Header */}
+      <Header
+        stats={stats}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onSearchSubmit={fetchAccountData}
+        onRefresh={() => {
+          fetchStats();
+          fetchAccountData(selectedAccount);
+        }}
+      />
+
+      {/* Main Dashboard Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
+        {/* Top Hero Overview Banner */}
+        <div className="metallic-card rounded-2xl p-6 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[var(--accent-electric)] animate-ping" />
+              <span className="text-[11px] font-mono-tech uppercase tracking-widest text-[var(--accent-electric)] font-bold">
+                STELLAR ACCOUNT TRUST SIGNALS
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+              PulseLayer Deterministic Risk & Behavior Control System
+            </h1>
+            <p className="text-xs text-[var(--text-secondary)] max-w-2xl font-mono-tech">
+              Indexing active accounts across ledgers, evaluating lifespan, consistency, velocity spikes, and counterparty exposure in real time.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <button
+              onClick={() => handleInspectAccount(selectedAccount)}
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[var(--accent-electric)] to-[#0066FF] text-black font-mono-tech font-bold text-xs hover:brightness-110 transition-all shadow-lg shadow-[#00F0FF]/20 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4 fill-black" />
+              Inspect Full Audit
+            </button>
+          </div>
+        </div>
+
+        {/* Section 1: Main Gauges Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Pulse Score Display */}
+          <PulseGauge
+            score={scoreData?.score || 50}
+            trend={scoreData?.trend || 'stable'}
+            confidence={scoreData?.confidence || 0.85}
+            anomalyFlag={Boolean(scoreData?.anomaly_flag)}
+            riskLevel={scoreData?.risk_level || 'MODERATE'}
+            account={selectedAccount}
+          />
+
+          {/* Right: Score Trend Curve */}
+          <ScoreTrendChart
+            snapshots={historyData}
+            account={selectedAccount}
+          />
+        </div>
+
+        {/* Section 2: Live Activity Feed & Selected Account Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left 2 Cols: Real-Time Stream */}
+          <div className="lg:col-span-2">
+            <LiveActivityFeed onSelectAccount={fetchAccountData} />
+          </div>
+
+          {/* Right 1 Col: Quick Account Audit Summary */}
+          <div className="metallic-card rounded-2xl p-6 flex flex-col justify-between font-mono-tech space-y-4">
+            <div>
+              <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3 mb-4">
+                <span className="text-[11px] uppercase tracking-widest text-[var(--accent-electric)] font-bold">
+                  ACTIVE ACCOUNT METRICS
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
+                  TARGET AUDIT
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                  <span className="text-[10px] text-[var(--text-secondary)] block uppercase">Address:</span>
+                  <span className="text-xs text-[var(--accent-electric)] font-bold break-all block mt-0.5">
+                    {selectedAccount}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                    <span className="text-[10px] text-[var(--text-secondary)] block">Lifespan:</span>
+                    <span className="text-[var(--text-primary)] font-bold">{scoreData?.lifespan_days || 1} Days</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                    <span className="text-[10px] text-[var(--text-secondary)] block">Tx Count:</span>
+                    <span className="text-[var(--text-primary)] font-bold">{(scoreData?.tx_count || 0).toLocaleString()}</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                    <span className="text-[10px] text-[var(--text-secondary)] block">XLM Balance:</span>
+                    <span className="text-[var(--text-primary)] font-bold">{(scoreData?.xlm_balance || 0).toLocaleString()}</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
+                    <span className="text-[10px] text-[var(--text-secondary)] block">Trustlines:</span>
+                    <span className="text-[var(--text-primary)] font-bold">{scoreData?.trustlines_count || 0}</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] space-y-1">
+                  <span className="text-[10px] text-[var(--text-secondary)] block uppercase">Active Signals Summary:</span>
+                  <p className="text-[11px] text-[var(--text-primary)]">
+                    {scoreData?.signals?.[0]?.title || 'Standard activity metrics verified.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleInspectAccount(selectedAccount)}
+              className="w-full py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-electric)] text-[var(--text-primary)] text-xs font-bold transition-all flex items-center justify-center gap-2 group cursor-pointer"
+            >
+              <span>View Factor Audit</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform text-[var(--accent-electric)]" />
+            </button>
+          </div>
+        </div>
+
+        {/* Section 3: Top Accounts Leaderboard */}
+        <TopAccountsTable
+          onSelectAccount={fetchAccountData}
+          searchQuery={searchQuery}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
       </main>
+
+      {/* Modal Deep Inspection View */}
+      {modalAccountData && (
+        <AccountAnalysisModal
+          accountData={modalAccountData}
+          onClose={() => setModalAccountData(null)}
+        />
+      )}
+
+      {/* Footer */}
+      <footer className="border-t border-[var(--border-subtle)] py-6 px-4 text-center font-mono-tech text-xs text-[var(--text-muted)]">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p>© 2026 PulseLayer Trust Engine • Connected to Stellar Horizon Mainnet</p>
+          <div className="flex items-center gap-4">
+            <span className="text-[var(--accent-electric)]">Deterministic Trust Protocol</span>
+            <span>•</span>
+            <span>On-Chain Analytics</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

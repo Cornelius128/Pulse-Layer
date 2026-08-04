@@ -2,8 +2,8 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const dbPath = path.join(process.cwd(), 'data', 'pulselayer.db');
-const dataDir = path.join(process.cwd(), 'data');
+const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+const dbPath = path.join(dataDir, 'pulselayer.db');
 
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });

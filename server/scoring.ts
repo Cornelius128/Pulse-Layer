@@ -38,6 +38,13 @@ export interface CalculatedTrustScore {
   confidence: number;
   anomaly_flag: boolean;
   risk_level: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  lifespan_days: number;
+  tx_count: number;
+  active_days: number;
+  success_rate: number;
+  xlm_balance: number;
+  trustlines_count: number;
+  funder?: string;
   last_updated: string;
   breakdown: ScoreBreakdown;
   signals: SignalItem[];
@@ -252,6 +259,13 @@ export function calculateTrustScore(data: AccountRawData): CalculatedTrustScore 
     confidence: Number(confidence.toFixed(2)),
     anomaly_flag: anomalyFlag,
     risk_level,
+    lifespan_days: data.lifespan_days,
+    tx_count: data.tx_count,
+    active_days: data.active_days,
+    success_rate: data.success_rate,
+    xlm_balance: data.xlm_balance,
+    trustlines_count: data.trustlines_count,
+    funder: data.funder,
     last_updated: new Date().toISOString(),
     breakdown: {
       consistency: consistencyScore,
