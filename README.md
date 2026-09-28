@@ -87,7 +87,7 @@ Where:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-org/pulse-layer.git
+   git clone https://github.com/Justice989810/Pulse-Layer.git
    cd pulse-layer
    ```
 
