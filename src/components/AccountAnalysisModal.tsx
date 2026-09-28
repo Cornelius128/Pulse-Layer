@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Copy,
@@ -24,14 +24,98 @@ export const AccountAnalysisModal: React.FC<AccountAnalysisModalProps> = ({
   accountData,
   onClose,
 }) => {
-  const [copied, setCopied] = useState(false);
+  type CopyState = 'idle' | 'success' | 'error';
+  const [copyState, setCopyState] = useState<CopyState>('idle');
+  const [copyErrorMsg, setCopyErrorMsg] = useState<string>('');
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!accountData) return null;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(accountData.account);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = null;
+    }
+
+    if (!accountData?.account) {
+      setCopyState('error');
+      setCopyErrorMsg('No address available');
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopyState('idle');
+        setCopyErrorMsg('');
+      }, 2500);
+      return;
+    }
+
+    // Modern Clipboard API check
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(accountData.account);
+        setCopyState('success');
+        setCopyErrorMsg('');
+        copyTimeoutRef.current = setTimeout(() => {
+          setCopyState('idle');
+        }, 2000);
+        return;
+      } catch (err: unknown) {
+        // Fall through to fallback or handle specific permission rejection
+        if (
+          err instanceof DOMException &&
+          (err.name === 'NotAllowedError' || err.name === 'SecurityError')
+        ) {
+          setCopyState('error');
+          setCopyErrorMsg('Clipboard permission denied');
+          copyTimeoutRef.current = setTimeout(() => {
+            setCopyState('idle');
+            setCopyErrorMsg('');
+          }, 2500);
+          return;
+        }
+      }
+    }
+
+    // Fallback for unsupported browsers or insecure contexts
+    try {
+      if (typeof document !== 'undefined' && document.execCommand) {
+        const textArea = document.createElement('textarea');
+        textArea.value = accountData.account;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.opacity = '0';
+        textArea.style.pointerEvents = 'none';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (!success) {
+          throw new Error('execCommand copy failed');
+        }
+        setCopyState('success');
+        setCopyErrorMsg('');
+        copyTimeoutRef.current = setTimeout(() => {
+          setCopyState('idle');
+        }, 2000);
+        return;
+      }
+      throw new Error('Clipboard API unavailable');
+    } catch {
+      setCopyState('error');
+      setCopyErrorMsg('Failed to copy address');
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopyState('idle');
+        setCopyErrorMsg('');
+      }, 2500);
+    }
   };
 
   const handleExportJSON = () => {
@@ -72,13 +156,50 @@ export const AccountAnalysisModal: React.FC<AccountAnalysisModalProps> = ({
                 {accountData.account}
               </span>
               <button
+                type="button"
                 onClick={handleCopy}
-                className="p-1 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
-                title="Copy Address"
+                className="p-1 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer inline-flex items-center justify-center"
+                title={
+                  copyState === 'success'
+                    ? 'Address copied to clipboard'
+                    : copyState === 'error'
+                    ? copyErrorMsg
+                    : 'Copy Address'
+                }
+                aria-label={
+                  copyState === 'success'
+                    ? 'Address copied to clipboard'
+                    : copyState === 'error'
+                    ? `Copy failed: ${copyErrorMsg}`
+                    : 'Copy Address'
+                }
               >
-                <Copy className="w-3.5 h-3.5" />
+                {copyState === 'success' ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[var(--accent-emerald)]" />
+                ) : copyState === 'error' ? (
+                  <AlertCircle className="w-3.5 h-3.5 text-[var(--accent-rose)]" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
               </button>
-              {copied && <span className="text-[10px] text-[var(--accent-emerald)]">Copied!</span>}
+              {copyState === 'success' && (
+                <span
+                  role="status"
+                  aria-live="polite"
+                  className="text-[10px] text-[var(--accent-emerald)] font-bold"
+                >
+                  Copied!
+                </span>
+              )}
+              {copyState === 'error' && (
+                <span
+                  role="alert"
+                  aria-live="assertive"
+                  className="text-[10px] text-[var(--accent-rose)] font-bold"
+                >
+                  {copyErrorMsg}
+                </span>
+              )}
             </div>
           </div>
 
