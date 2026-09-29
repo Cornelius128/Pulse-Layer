@@ -22,15 +22,14 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
 }) => {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
-  const [pagination, setPagination] = useState({ page: 1, searchQuery });
+  const [pagination, setPagination] = useState({ searchQuery, page: 1 });
   const page = pagination.searchQuery === searchQuery ? pagination.page : 1;
   const setPage = (nextPage: number | ((currentPage: number) => number)) => {
     setPagination((current) => ({
-      page:
-        typeof nextPage === 'function'
-          ? nextPage(current.searchQuery === searchQuery ? current.page : 1)
-          : nextPage,
       searchQuery,
+      page: typeof nextPage === 'function'
+        ? nextPage(current.searchQuery === searchQuery ? current.page : 1)
+        : nextPage,
     }));
   };
   const [riskFilter, setRiskFilter] = useState('ALL');
