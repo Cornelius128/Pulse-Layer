@@ -1,34 +1,41 @@
 name: Bug report
-description: Report a reproducible problem
+description: Report behavior that is not working as expected.
 title: "[Bug]: "
-labels: [bug]
+labels: ["bug"]
 body:
   - type: textarea
-    id: reproduction
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the behavior you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
     attributes:
       label: Steps to reproduce
-      description: Include the smallest sequence that reproduces the problem.
-      placeholder: 1. Open ...\n2. Select ...\n3. Observe ...
+      description: List the steps needed to reproduce the problem.
+      placeholder: |-
+        1. Go to ...
+        2. Select ...
+        3. Observe ...
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Expected and actual behavior
-      description: What did you expect, and what happened instead?
+      label: Expected behavior
+      description: What did you expect to happen?
     validations:
       required: true
-  - type: textarea
+  - type: input
     id: environment
     attributes:
       label: Environment
-      description: Include browser, operating system, and Node.js version when relevant.
-    validations:
-      required: true
+      description: Include your Node.js version, operating system, and browser if relevant.
+      placeholder: Node.js 22, Ubuntu 24.04, Firefox 140
   - type: textarea
-    id: verification
+    id: logs
     attributes:
-      label: Logs or additional context
-      description: Add relevant errors, screenshots, or other details.
-    validations:
-      required: false
+      label: Relevant logs or screenshots
+      description: Remove secrets and personal data before sharing.
