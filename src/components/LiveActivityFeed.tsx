@@ -37,18 +37,38 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
 
   // Initial Fetch & WebSocket setup
   useEffect(() => {
-    // Initial Rest Fetch
-    fetch(`${getApiUrl()}/api/feed`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.transactions) {
+    const controller = new AbortController();
+    let requestInProgress = false;
+    const fetchFeed = async () => {
+      if (requestInProgress || isPausedRef.current) return;
+      requestInProgress = true;
+      try {
+        const response = await fetch(`${getApiUrl()}/api/feed`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(`Feed request failed: ${response.status}`);
+        const data = await response.json();
+        if (
+          !controller.signal.aborted &&
+          !isPausedRef.current &&
+          Array.isArray(data.transactions)
+        ) {
           setFeed((current) => mergeFeed(current, data.transactions));
         }
-      })
-      .catch((err) => console.error('Feed fetch error:', err));
+      } catch (err) {
+        if (!controller.signal.aborted) console.error('Feed fetch error:', err);
+      } finally {
+        requestInProgress = false;
+      }
+    };
+
+    void fetchFeed();
 
     // Connect WebSocket
     const ws = new WebSocket(getWsUrl());
+    const pollTimer = setInterval(() => {
+      if (ws.readyState !== WebSocket.OPEN) void fetchFeed();
+    }, 5000);
 
     ws.onopen = () => {
       setConnected(true);
@@ -69,6 +89,8 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
     ws.onclose = () => setConnected(false);
 
     return () => {
+      clearInterval(pollTimer);
+      controller.abort();
       ws.close();
     };
   }, []);
