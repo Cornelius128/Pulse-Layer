@@ -14,24 +14,18 @@ import { getApiUrl } from '@/lib/config';
 interface TopAccountsTableProps {
   onSelectAccount: (account: string) => void;
   searchQuery: string;
+  page: number;
+  onPageChange: (page: number) => void;
 }
 
 export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
   onSelectAccount,
   searchQuery,
+  page,
+  onPageChange,
 }) => {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
-  const [pagination, setPagination] = useState({ searchQuery, page: 1 });
-  const page = pagination.searchQuery === searchQuery ? pagination.page : 1;
-  const setPage = (nextPage: number | ((currentPage: number) => number)) => {
-    setPagination((current) => ({
-      searchQuery,
-      page: typeof nextPage === 'function'
-        ? nextPage(current.searchQuery === searchQuery ? current.page : 1)
-        : nextPage,
-    }));
-  };
   const [riskFilter, setRiskFilter] = useState('ALL');
   const [sort, setSort] = useState('score_desc');
   const [loading, setLoading] = useState(false);
@@ -105,7 +99,7 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
               key={tab.id}
               onClick={() => {
                 setRiskFilter(tab.id);
-                setPage(1);
+                onPageChange(1);
               }}
               className={`px-3 py-1 text-xs rounded transition-all whitespace-nowrap cursor-pointer ${
                 riskFilter === tab.id
@@ -257,7 +251,7 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
         <div className="flex items-center gap-2">
           <button
             disabled={page === 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => onPageChange(Math.max(1, page - 1))}
             className="p-1.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-electric)] disabled:opacity-40 disabled:hover:border-[var(--border-subtle)] cursor-pointer disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -265,7 +259,7 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
           <span>Page {page} of {Math.ceil(total / 10) || 1}</span>
           <button
             disabled={page >= Math.ceil(total / 10)}
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => onPageChange(page + 1)}
             className="p-1.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-electric)] disabled:opacity-40 disabled:hover:border-[var(--border-subtle)] cursor-pointer disabled:cursor-not-allowed"
           >
             <ChevronRight className="w-4 h-4" />

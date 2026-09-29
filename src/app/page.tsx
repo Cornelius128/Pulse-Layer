@@ -19,6 +19,7 @@ const DEMO_ACCOUNT_DEFAULT = 'GAK6E46MRRAG72MNDHNE54F2M43MVTK4Z2X7MHBCEEE4ZJ32FG
 export default function Home() {
   const [stats, setStats] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [accountsPage, setAccountsPage] = useState(1);
   const [selectedAccount, setSelectedAccount] = useState(DEMO_ACCOUNT_DEFAULT);
   const [scoreData, setScoreData] = useState<any>(null);
   const [historyData, setHistoryData] = useState<any[]>([]);
@@ -85,7 +86,10 @@ export default function Home() {
       <Header
         stats={stats}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={(query) => {
+          setSearchQuery(query);
+          setAccountsPage(1);
+        }}
         onSearchSubmit={fetchAccountData}
         onRefresh={() => {
           fetchStats();
@@ -215,6 +219,8 @@ export default function Home() {
         <TopAccountsTable
           onSelectAccount={fetchAccountData}
           searchQuery={searchQuery}
+          page={accountsPage}
+          onPageChange={setAccountsPage}
         />
       </main>
 
