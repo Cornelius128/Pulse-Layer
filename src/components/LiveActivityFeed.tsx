@@ -95,9 +95,11 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const nextPaused = !isPaused;
-              isPausedRef.current = nextPaused;
-              setIsPaused(nextPaused);
+              setIsPaused((paused) => {
+                const nextPaused = !paused;
+                isPausedRef.current = nextPaused;
+                return nextPaused;
+              });
             }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-electric)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
           >
