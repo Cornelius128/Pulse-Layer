@@ -3,6 +3,7 @@ import cors from 'cors';
 import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { db } from './db';
+import { apiCachePolicy } from './cache-policy';
 import { seedAccountsDatabase, startHorizonLiveStream, indexerEvents, DEMO_WELL_KNOWN_ACCOUNTS, getOrFetchStellarAccount } from './indexer';
 import { calculateTrustScore, AccountRawData } from './scoring';
 
@@ -13,6 +14,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const corsOrigin = process.env.CORS_ORIGIN || '*';
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
+app.use(apiCachePolicy);
 
 // Initialize HTTP server & WebSockets
 const server = http.createServer(app);
@@ -64,7 +66,7 @@ app.get('/api/stats', (req, res) => {
       last_updated: new Date().toISOString(),
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+      res.status(500).json({ error: err.message });
   }
 });
 
@@ -118,7 +120,7 @@ app.get('/api/score/:account', async (req, res) => {
 
     res.json(calculated);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.setHeader('Cache-Control', 'no-store').status(500).json({ error: err.message });
   }
 });
 
@@ -142,7 +144,7 @@ app.get('/api/history/:account', (req, res) => {
 
     res.json({ account, snapshots });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.setHeader('Cache-Control', 'no-store').status(500).json({ error: err.message });
   }
 });
 
