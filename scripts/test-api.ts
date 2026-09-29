@@ -66,19 +66,20 @@ async function runTests() {
   // Test 3: API Endpoint Integration Check
   console.log('Test 3: Validating REST API endpoints against localhost:5001...');
   try {
-    const statsHttpRes = await fetch('http://localhost:5001/api/stats');
-    const expectedHeaders = {
+    const statsResponse = await fetch('http://localhost:5001/api/stats');
+    const expectedSecurityHeaders: Record<string, string> = {
       'x-content-type-options': 'nosniff',
       'x-frame-options': 'DENY',
       'referrer-policy': 'no-referrer',
-      'x-xss-protection': '0',
+      'content-security-policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
     };
-    for (const [header, value] of Object.entries(expectedHeaders)) {
-      if (statsHttpRes.headers.get(header) !== value) {
-        throw new Error(`Expected ${header}: ${value}`);
+    for (const [header, expected] of Object.entries(expectedSecurityHeaders)) {
+      if (statsResponse.headers.get(header) !== expected) {
+        throw new Error(`Expected /api/stats to include ${header}: ${expected}`);
       }
     }
-    const statsRes = await statsHttpRes.json();
+    console.log('✅ /api/stats includes the baseline security headers.');
+    const statsRes = await statsResponse.json();
     console.log('✅ /api/stats:', statsRes);
     console.log('✅ API security headers are present.');
 

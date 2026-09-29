@@ -3,6 +3,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, Zap, Radio, Pause, Play } from 'lucide-react';
 import { getApiUrl, getWsUrl } from '@/lib/config';
+import { fetchApiJson, isRecord } from '@/lib/api';
+
+type FeedResponse = { transactions: Record<string, unknown>[] };
+
+const isFeedResponse = (value: unknown): value is FeedResponse =>
+  isRecord(value) &&
+  Array.isArray(value.transactions) &&
+  value.transactions.every((transaction) =>
+    isRecord(transaction) && typeof transaction.account_id === 'string',
+  );
 
 interface LiveActivityFeedProps {
   onSelectAccount: (account: string) => void;
@@ -38,17 +48,17 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
   // Initial Fetch & WebSocket setup
   useEffect(() => {
     // Initial Rest Fetch
-    fetch(`${getApiUrl()}/api/feed`)
-      .then((res) => res.json())
+    fetchApiJson(`${getApiUrl()}/api/feed`, isFeedResponse)
       .then((data) => {
-        if (data.transactions) {
-          setFeed((current) => mergeFeed(current, data.transactions));
-        }
+        setFeed(data.transactions);
       })
       .catch((err) => console.error('Feed fetch error:', err));
 
     // Connect WebSocket
     const ws = new WebSocket(getWsUrl());
+    const pollTimer = setInterval(() => {
+      if (ws.readyState !== WebSocket.OPEN) void fetchFeed();
+    }, 5000);
 
     ws.onopen = () => {
       setConnected(true);
@@ -69,6 +79,8 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
     ws.onclose = () => setConnected(false);
 
     return () => {
+      clearInterval(pollTimer);
+      controller.abort();
       ws.close();
     };
   }, []);
@@ -95,9 +107,11 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const nextPaused = !isPaused;
-              isPausedRef.current = nextPaused;
-              setIsPaused(nextPaused);
+              setIsPaused((paused) => {
+                const nextPaused = !paused;
+                isPausedRef.current = nextPaused;
+                return nextPaused;
+              });
             }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-electric)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
           >
@@ -119,8 +133,16 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
             <button
               type="button"
               key={item.id || idx}
+              role="button"
+              tabIndex={0}
               onClick={() => onSelectAccount(item.account_id)}
-              className={`w-full text-left p-3 rounded-lg border transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-electric)] ${
+              onKeyDown={(event) => {
+                if ((event.key === 'Enter' || event.key === ' ') && !event.repeat) {
+                  event.preventDefault();
+                  onSelectAccount(item.account_id);
+                }
+              }}
+              className={`p-3 rounded-lg border transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-electric)] ${
                 isAnomaly
                   ? 'bg-[var(--accent-amber)]/10 border-[var(--accent-amber)]/40 hover:border-[var(--accent-amber)] shadow-md shadow-[#F59E0B]/5'
                   : 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] hover:border-[var(--accent-electric)]'
