@@ -22,9 +22,18 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
 }) => {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ searchQuery, page: 1 });
+  const page = pagination.searchQuery === searchQuery ? pagination.page : 1;
+  const setPage = (nextPage: number | ((currentPage: number) => number)) => {
+    setPagination((current) => ({
+      searchQuery,
+      page: typeof nextPage === 'function'
+        ? nextPage(current.searchQuery === searchQuery ? current.page : 1)
+        : nextPage,
+    }));
+  };
   const [riskFilter, setRiskFilter] = useState('ALL');
-  const [sort] = useState('score_desc');
+  const [sort, setSort] = useState('score_desc');
   const [loading, setLoading] = useState(false);
 
   const fetchAccounts = () => {
@@ -71,6 +80,20 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
 
         {/* Risk Filter Tabs */}
         <div className="flex items-center gap-1 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--border-subtle)] overflow-x-auto">
+          <label className="sr-only" htmlFor="account-directory-sort">Sort accounts</label>
+          <select
+            id="account-directory-sort"
+            value={sort}
+            onChange={(event) => {
+              setSort(event.target.value);
+              setPage(1);
+            }}
+            className="px-2 py-1 text-xs rounded bg-[var(--bg-primary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] cursor-pointer"
+          >
+            <option value="score_desc">Highest score</option>
+            <option value="tx_desc">Most transactions</option>
+            <option value="lifespan_desc">Longest lifespan</option>
+          </select>
           {[
             { id: 'ALL', label: 'All Accounts' },
             { id: 'LOW', label: 'Low Risk (80-100)' },
