@@ -1,7 +1,7 @@
 name: Bug report
 description: Report a reproducible problem with PulseLayer.
 title: "[Bug]: "
-labels: [bug]
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
@@ -24,14 +24,14 @@ body:
         3. Observe...
     validations:
       required: true
-  - type: textarea
+  - type: input
     id: environment
     attributes:
       label: Environment
       description: Include your browser, operating system, and Node.js version when relevant.
       placeholder: Browser / OS / Node.js version
   - type: textarea
-    id: verification
+    id: logs
     attributes:
       label: Logs or verification details
       description: Add relevant error messages, screenshots, or checks that help confirm the issue.

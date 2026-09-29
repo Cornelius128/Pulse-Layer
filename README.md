@@ -123,6 +123,8 @@ PulseLayer is configured for instant cloud deployment. Read the comprehensive **
 
 ### REST Endpoints
 
+Successful account score and history responses are publicly cacheable for 30 seconds with up to 60 seconds of stale-while-revalidate. Other API responses and score/history failures use `Cache-Control: no-store`.
+
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/stats` | Global network indexer stats, ledger height, and average trust score |
