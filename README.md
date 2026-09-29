@@ -123,6 +123,8 @@ PulseLayer is configured for instant cloud deployment. Read the comprehensive **
 
 ### REST Endpoints
 
+Successful account score and history responses are publicly cacheable for 30 seconds with up to 60 seconds of stale-while-revalidate. Other API responses and score/history failures use `Cache-Control: no-store`.
+
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/stats` | Global network indexer stats, ledger height, and average trust score |
@@ -130,7 +132,9 @@ PulseLayer is configured for instant cloud deployment. Read the comprehensive **
 | `GET` | `/api/history/:account` | Historical score snapshot timeline for charts |
 | `GET` | `/api/top` | Paginated directory of indexed Stellar accounts with risk filtering |
 | `GET` | `/api/feed` | Recent indexed Stellar operations feed |
-| `GET` | `/api/export/:account` | Download full structured JSON audit payload for an account |
+| `GET` | `/api/export/:account` | Download structured JSON for a valid, indexed Stellar account; returns `400` for invalid addresses and `404` when the account is not indexed |
+
+API responses include `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and `X-XSS-Protection: 0`.
 
 ### WebSocket API
 * **Endpoint**: `/ws`
