@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, Zap, Radio, Pause, Play } from 'lucide-react';
 import { getApiUrl, getWsUrl } from '@/lib/config';
 
@@ -8,12 +8,32 @@ interface LiveActivityFeedProps {
   onSelectAccount: (account: string) => void;
 }
 
+const mergeFeed = (current: any[], incoming: any[]) => {
+  const seen = new Set();
+  return [...current, ...incoming]
+    .filter((item) => {
+      const identity = item.id ?? item.hash;
+      if (!identity) return true;
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    })
+    .sort((left, right) => {
+      const leftTime = Date.parse(left.created_at ?? '');
+      const rightTime = Date.parse(right.created_at ?? '');
+      if (!Number.isFinite(leftTime) || !Number.isFinite(rightTime)) return 0;
+      return rightTime - leftTime;
+    })
+    .slice(0, 30);
+};
+
 export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
   onSelectAccount,
 }) => {
   const [feed, setFeed] = useState<any[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const [connected, setConnected] = useState(false);
+  const isPausedRef = useRef(false);
 
   // Initial Fetch & WebSocket setup
   useEffect(() => {
@@ -22,7 +42,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
       .then((res) => res.json())
       .then((data) => {
         if (data.transactions) {
-          setFeed(data.transactions);
+          setFeed((current) => mergeFeed(current, data.transactions));
         }
       })
       .catch((err) => console.error('Feed fetch error:', err));
@@ -35,11 +55,11 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
     };
 
     ws.onmessage = (event) => {
-      if (isPaused) return;
+      if (isPausedRef.current) return;
       try {
         const payload = JSON.parse(event.data);
         if (payload.type === 'LIVE_TRANSACTION') {
-          setFeed((prev) => [payload.data, ...prev.slice(0, 24)]);
+          setFeed((current) => mergeFeed(current, [payload.data]));
         }
       } catch (e) {
         console.error('WS parse error:', e);
@@ -51,7 +71,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
     return () => {
       ws.close();
     };
-  }, [isPaused]);
+  }, []);
 
   return (
     <div className="metallic-card rounded-2xl p-6 flex flex-col justify-between min-h-[420px] font-mono-tech">
@@ -74,7 +94,11 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsPaused(!isPaused)}
+            onClick={() => {
+              const nextPaused = !isPaused;
+              isPausedRef.current = nextPaused;
+              setIsPaused(nextPaused);
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-electric)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
           >
             {isPaused ? <Play className="w-3 h-3 text-[var(--accent-emerald)]" /> : <Pause className="w-3 h-3 text-[var(--accent-amber)]" />}
@@ -92,7 +116,8 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
             : 'NOW';
 
           return (
-            <div
+            <button
+              type="button"
               key={item.id || idx}
               role="button"
               tabIndex={0}
@@ -127,7 +152,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
                     </span>
                   </div>
                   <p className="text-[10px] text-[var(--text-muted)] truncate">
-                    Hash: {item.hash || '0x49f2...81a'}
+                    Hash: {item.hash || 'Unavailable'}
                   </p>
                 </div>
               </div>
@@ -136,7 +161,10 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
               <div className="flex items-center justify-between sm:justify-end gap-3 text-right">
                 <div>
                   <span className="text-xs font-bold text-[var(--text-primary)] block">
-                    +{item.amount || '100.00'} {item.asset || 'XLM'}
+                    {item.amount !== undefined && item.amount !== null && item.amount !== ''
+                      ? item.amount
+                      : 'Amount unavailable'}{' '}
+                    {item.asset || 'Asset unavailable'}
                   </span>
                   <span className="text-[10px] text-[var(--text-muted)]">{dateStr}</span>
                 </div>
@@ -147,7 +175,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
                   </span>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
