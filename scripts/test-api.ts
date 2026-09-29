@@ -65,8 +65,21 @@ async function runTests() {
   // Test 3: API Endpoint Integration Check
   console.log('Test 3: Validating REST API endpoints against localhost:5001...');
   try {
-    const statsRes = await fetch('http://localhost:5001/api/stats').then((r) => r.json());
+    const statsHttpRes = await fetch('http://localhost:5001/api/stats');
+    const expectedHeaders = {
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'DENY',
+      'referrer-policy': 'no-referrer',
+      'x-xss-protection': '0',
+    };
+    for (const [header, value] of Object.entries(expectedHeaders)) {
+      if (statsHttpRes.headers.get(header) !== value) {
+        throw new Error(`Expected ${header}: ${value}`);
+      }
+    }
+    const statsRes = await statsHttpRes.json();
     console.log('✅ /api/stats:', statsRes);
+    console.log('✅ API security headers are present.');
 
     const topRes = await fetch('http://localhost:5001/api/top?limit=3').then((r) => r.json());
     console.log('✅ /api/top:', { total: topRes.total, returned: topRes.accounts.length });
@@ -80,6 +93,7 @@ async function runTests() {
     console.log('\n🎉 ALL INTEGRATION TESTS PASSED CLEANLY!');
   } catch (err: any) {
     console.error('❌ API Integration Test Failed:', err.message);
+    process.exitCode = 1;
   }
 }
 

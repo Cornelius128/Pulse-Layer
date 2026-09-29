@@ -132,6 +132,8 @@ PulseLayer is configured for instant cloud deployment. Read the comprehensive **
 | `GET` | `/api/feed` | Recent indexed Stellar operations feed |
 | `GET` | `/api/export/:account` | Download full structured JSON audit payload for an account |
 
+API responses include `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and `X-XSS-Protection: 0`.
+
 ### WebSocket API
 * **Endpoint**: `/ws`
 * **Event Payload**:
