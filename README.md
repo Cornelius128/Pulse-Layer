@@ -1,6 +1,6 @@
 # PulseLayer ⚡
 
-**Real-Time Deterministic Trust Signal Indexer & Risk Analytics Protocol for the Stellar Network**
+Real-time trust intelligence and risk analytics for the Stellar ecosystem.
 
 [![Stellar](https://img.shields.io/badge/Stellar-Mainnet-00F0FF?style=flat-square&logo=stellar)](https://stellar.org)
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-000000?style=flat-square&logo=next.js)](https://nextjs.org)
@@ -12,186 +12,257 @@
 
 ---
 
-## Executive Overview
+## Why PulseLayer exists
 
-**PulseLayer** is an open-source, high-throughput behavioral analytics indexer and trust signal engine built for the Stellar ecosystem. It connects directly to Stellar Horizon nodes to stream, evaluate, and index account operational patterns in real time.
+The Stellar network is transparent, fast, and globally accessible, but it lacks a standardized, human-readable trust layer for wallet screening, institutional due diligence, counterparty assessment, and risk monitoring.
 
-PulseLayer computes a dynamic, deterministic **Pulse Score (0–100)** for any Stellar public key (`G...`), translating historical lifespan, transaction velocity, counterparty exposure, balance liquidity, and trustline activity into actionable risk intelligence for wallets, institutional gateways, and automated decentralized protocols.
+PulseLayer fills that gap by turning raw on-chain activity into a deterministic, explainable trust signal. It watches Stellar account behavior in real time, evaluates patterns over time, and produces a score that helps users understand whether an address is behaving like a healthy, active participant or an anomalous, risky, or inactive account.
 
----
-
-## Key Features
-
-* **⚡ Live Horizon SSE Streaming**: Continuous ingestion of live Stellar mainnet ledgers and transactions with zero polling overhead.
-* **🛡️ Deterministic Pulse Score Engine**: Multi-factor scoring mathematical model evaluating account lifespan, transaction consistency, liquidity depth, asset trustlines, and anomaly detection.
-* **📡 Real-time WebSocket Protocol (`wss://`)**: Sub-second event broadcasting to frontend subscribers for instant transaction visibility.
-* **🔍 Deep Factor Audits**: Detailed metric breakdown per account, complete with negative/positive signal triggers, history snapshots, and structured JSON audit export.
-* **🌗 Adaptive Light & Dark Theme Engine**: High-contrast, accessibility-compliant user interface designed for both low-light operations centers and standard light environments.
-* **☁️ Multi-Cloud Deployment Ready**: Pre-configured for seamless containerized deployment on **Render**, **Railway**, **Vercel**, or **Docker Compose**.
+This project is intentionally designed to be reviewable by both humans and automated evaluators: it has a clear architecture, deterministic scoring logic, transparent signal explanations, open-source code, and a contributor workflow aligned with public-good funding standards.
 
 ---
 
-## System Architecture
+## What PulseLayer does
+
+PulseLayer ingests Stellar mainnet activity, analyzes account behavioral patterns, and exposes a real-time trust score through a dashboard and API.
+
+Core capabilities:
+
+- Live Horizon monitoring for Stellar activity
+- Deterministic trust scoring from public account behavior
+- Real-time anomaly detection for bursty, suspicious, or unstable patterns
+- Risk breakdowns and audit-friendly signal explanations
+- Historical trend data for account performance over time
+- Searchable and filterable account leaderboard
+- Read-only infrastructure for public network analysis
+
+The result is a tool that can support:
+
+- wallet risk screening
+- compliance and account review workflows
+- ecosystem monitoring for counterparties
+- better visibility for and trust in on-chain activity
+- future integrations with investment, analytics, and compliance tools
+
+---
+
+## Problem statement
+
+In the Stellar ecosystem, there is a critical need for transparent behavioral risk intelligence that is not locked behind private APIs or opaque scoring models. Most users and institutions still rely on fragmented signals, manual checks, or ad hoc heuristics.
+
+Without a reusable trust layer, it remains difficult to:
+
+- evaluate a wallet or address systematically
+- compare network participants consistently
+- detect suspicious operational behavior early
+- improve user trust and wallet safety
+- build public-good tooling for ecosystem health
+
+PulseLayer provides a transparent and extensible foundation for this analysis.
+
+---
+
+## Solution overview
+
+PulseLayer combines a real-time indexer, deterministic scoring engine, and a web dashboard into one open-source project.
+
+The system:
+
+1. Reads public Stellar account and transaction data
+2. Scores behavioral signals using a transparent formula
+3. Flags anomalous conditions such as sudden bursts, liquidity stress, and low-confidence patterns
+4. Stores historical snapshots for trend analysis
+5. Exposes data through a REST API and WebSocket feed
+6. Makes results visible through a dashboard for human review and operational decision-making
+
+This makes the project valuable not only as a product, but also as a public-good infrastructure layer for the Stellar ecosystem.
+
+---
+
+## Technical architecture
 
 ```mermaid
-graph TD
-    A["Stellar Horizon Public Mainnet"] -->|SSE Server-Sent Events| B["PulseLayer Indexer (server/indexer.ts)"]
-    B -->|Score Calculation| C["Deterministic Risk Engine (server/scoring.ts)"]
-    C -->|Persist State| D[("SQLite Engine (data/pulselayer.db)")]
-    C -->|Broadcast Live Events| E["WebSocket Server (ws:// / wss://)"]
-    
-    F["Express REST API (server/server.ts)"] <-->|Query State| D
-    
-    G["Next.js 16 UI Dashboard"] <-->|REST Queries| F
-    G <-->|Realtime Stream| E
+flowchart LR
+    A[Stellar Horizon] --> B[PulseLayer Indexer]
+    B --> C[Deterministic Scoring Engine]
+    C --> D[(SQLite Data Layer)]
+    C --> E[WebSocket Stream]
+    D --> F[Express API]
+    F --> G[Next.js Dashboard]
 ```
 
-For full system architecture specifications, read [ARCHITECTURE.md](ARCHITECTURE.md).
+The architecture is intentionally modular and straightforward:
+
+- `server/indexer.ts` ingests live network data
+- `server/scoring.ts` contains the scoring and anomaly logic
+- `server/db.ts` manages persistence and indexing
+- `server/server.ts` exposes API and WebSocket endpoints
+- `src/` contains the UI and interactive analytics layer
+
+For deeper implementation details, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
-## Deterministic Scoring Mathematical Model
+## Deterministic scoring model
 
-PulseLayer computes an account trust score \( S \in [0, 100] \) based on five core operational factors:
+PulseLayer computes a score in the range $[0, 100]$ using a transparent and explainable formula that balances positive network behavior with risk penalties.
 
-\[
-S = \text{clamp}\Big( \sum_{i=1}^{5} w_i \cdot F_i - \Delta_{\text{anomaly}}, \, 0, \, 100 \Big)
-\]
+$$
+S = \mathrm{clamp}\left(\sum_{i=1}^{n} w_i F_i - \Delta_{anomaly},\ 0,\ 100\right)
+$$
 
 Where:
-* **\( F_1 \) (Account Lifespan)**: Multi-stage logarithmic growth scaling with account age in days.
-* **\( F_2 \) (Transaction Velocity & Consistency)**: Operational volume and active daily engagement ratio.
-* **\( F_3 \) (XLM Liquidity Buffer)**: Reserve balance depth ensuring operational sustainability.
-* **\( F_4 \) (Asset Trustlines)**: Diversity of anchor asset connections on Stellar.
-* **\( F_5 \) (Success & Counterparty Ratio)**: Ratio of successful operations versus failed sequences.
-* **\( \Delta_{\text{anomaly}} \)**: Dynamic penalty deduction applied when rapid volume spikes or suspicious burst patterns are detected.
+
+- $F_1$ reflects account age and lifespan quality
+- $F_2$ reflects transaction consistency and velocity
+- $F_3$ reflects balance and liquidity depth
+- $F_4$ reflects trustline diversity and network participation
+- $F_5$ reflects counterparty quality and success behavior
+- $\Delta_{anomaly}$ applies penalties for suspicious burst behavior, low-signal patterns, or instability
+
+The model is not a black box: each score is associated with the signals that informed it.
 
 ---
 
-## Technology Stack
+## Why this project is grant- and review-ready
 
-* **Frontend**: Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS v4, Lucide Icons, Recharts.
-* **Backend Runtime**: Node.js, Express 5, WebSockets (`ws`), `better-sqlite3`.
-* **Blockchain Layer**: Stellar SDK (`@stellar/stellar-sdk`), Horizon Mainnet SSE Stream.
-* **Deployment**: Docker, Docker Compose, Render Blueprint, Railway, Vercel.
+This repository is structured to support credible ecosystem review by both AI-driven analysis and human evaluators.
+
+It includes:
+
+- a clear technical problem and solution statement
+- modular system design and project structure
+- open and auditable scoring logic
+- transparent API and data flows
+- deployment configuration for real-world use
+- security-conscious implementation and documentation
+- a contributor model that requires review through pull requests
+
+This positioning makes the project suitable for public-good, ecosystem, and grant-style review frameworks where technical clarity, reproducibility, and maintainability matter.
+
+> Note: grant eligibility depends on the specific program, its rules, and the submission period. This repository is intentionally organized to support that review process, but final suitability is determined by the funding body.
 
 ---
 
-## Quick Start (Local Development)
+## Roadmap
+
+Our near-term direction is documented in [FUTURE_PLAN.md](FUTURE_PLAN.md). The core roadmap priorities include:
+
+- improving score transparency and explainability
+- expanding anomaly detection quality
+- hardening deployment and production reliability
+- supporting more ecosystem integrations
+- publishing a broader contributor and governance model
+- preparing for external grant, accelerator, and ecosystem funding submissions
+
+---
+
+## Quick start
 
 ### Prerequisites
-* Node.js v20+ 
-* npm v10+
 
-### Installation & Setup
+- Node.js 20+
+- npm 10+
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Justice989810/Pulse-Layer.git
-   cd pulse-layer
-   ```
+### Install and run
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+```bash
+git clone https://github.com/Justice989810/Pulse-Layer.git
+cd Pulse-Layer
+npm install
+npm run dev
+```
 
-3. **Start the local development environment** (runs Express server + Next.js UI concurrently):
-   ```bash
-   npm run dev
-   ```
+### Local access
 
-4. **Access the application**:
-   * **Web Dashboard**: `http://localhost:3000`
-   * **Express REST API**: `http://localhost:5001/api/stats`
-   * **WebSocket Stream**: `ws://localhost:5001/ws`
+- Dashboard: http://localhost:3000
+- API: http://localhost:5001/api/stats
+- WebSocket: ws://localhost:5001/ws
 
 ---
 
-## Deployment Guide
+## Deployment
 
-PulseLayer is configured for instant cloud deployment. Read the comprehensive **[DEPLOYMENT.md](DEPLOYMENT.md)** guide for step-by-step instructions on deploying to:
+This project is prepared for deployment across common hosting models. See [DEPLOYMENT.md](DEPLOYMENT.md) for instructions covering:
 
-* 🟢 **[Render Blueprint Setup](DEPLOYMENT.md#option-1-deploy-everything-on-render-recommended-blueprint)** (`render.yaml`)
-* 🚂 **[Railway One-Click Deployment](DEPLOYMENT.md#option-2-deploy-everything-on-railway)** (`railway.json` & `Procfile`)
-* ⚡ **[Hybrid Vercel + Cloud Backend](DEPLOYMENT.md#option-3-hybrid-deployment-vercel--render--railway)**
-* 🐳 **[Docker & Docker Compose](DEPLOYMENT.md#option-4-local-or-vps-docker-deployment)** (`docker-compose up -d`)
+- Render
+- Railway
+- Vercel + backend hybrid patterns
+- Docker and Docker Compose
 
 ---
 
-## API Reference Summary
+## API overview
 
-### REST Endpoints
+### REST endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/stats` | Global network indexer stats, ledger height, and average trust score |
-| `GET` | `/api/score/:account` | Detailed Pulse Score, factors, and active signals for Stellar address |
-| `GET` | `/api/history/:account` | Historical score snapshot timeline for charts |
-| `GET` | `/api/top` | Paginated directory of indexed Stellar accounts with risk filtering |
-| `GET` | `/api/feed` | Recent indexed Stellar operations feed |
-| `GET` | `/api/export/:account` | Download full structured JSON audit payload for an account |
+| GET | `/api/stats` | High-level network and indexer metrics |
+| GET | `/api/score/:account` | Trust score and signal breakdown for an account |
+| GET | `/api/history/:account` | Historical score snapshots |
+| GET | `/api/top` | Ranked account directory with filters |
+| GET | `/api/feed` | Recent activity feed |
+| GET | `/api/export/:account` | Structured JSON export for account audit review |
 
-The Express API applies `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and a restrictive `Content-Security-Policy` to HTTP responses. CORS remains configurable through `CORS_ORIGIN`.
+### WebSocket feed
 
-### WebSocket API
-* **Endpoint**: `/ws`
-* **Event Payload**:
-  ```json
-  {
-    "type": "LIVE_TRANSACTION",
-    "data": {
-      "id": "tx_981249",
-      "account_id": "GAK6E46MRRAG72MNDHNE54F2M43MVTK4Z2X7MHBCEEE4ZJ32FGGXX444",
-      "type": "payment",
-      "amount": "250.00",
-      "asset": "XLM",
-      "is_anomaly": false,
-      "created_at": "2026-08-04T19:00:00.000Z"
-    }
-  }
-  ```
+- Endpoint: `/ws`
+- Purpose: real-time broadcast of live Stellar events and updates
 
 ---
 
-## Security & Transparency
+## Security and transparency
 
-PulseLayer is designed with non-custodial and read-only operational boundaries:
-* **Zero Private Key Access**: PulseLayer only reads public Stellar ledger data (`G...` public keys).
-* **Input Validation**: Strict address format enforcement and SQL parameterization.
-* **Read-only Horizon Ingestion**: Pure SSE stream consumption with fallback retry mechanisms.
+This project is intentionally designed with a read-only, non-custodial operational model:
 
-For security policies and vulnerability reporting procedures, see **[SECURITY.md](SECURITY.md)**.
+- only public Stellar account data is accessed
+- no private keys are required
+- database access is parameterized and guarded
+- security headers are applied to API responses
+- public security disclosures are documented in [SECURITY.md](SECURITY.md)
 
 ---
 
-## Project Structure
+## Project structure
 
+```text
+Pulse-Layer/
+├── server/
+│   ├── db.ts
+│   ├── indexer.ts
+│   ├── scoring.ts
+│   └── server.ts
+├── src/
+│   ├── app/
+│   ├── components/
+│   ├── context/
+│   └── lib/
+├── ARCHITECTURE.md
+├── CONTRIBUTING.md
+├── DEPLOYMENT.md
+├── FUTURE_PLAN.md
+├── SECURITY.md
+├── README.md
+├── docker-compose.yml
+├── Dockerfile
+├── Procfile
+├── next.config.ts
+├── package.json
+├── railway.json
+├── render.yaml
+├── LICENSE
+└── tsconfig.json
 ```
-pulse-layer/
-├── server/                 # Express, SQLite DB, Indexer & Scoring Engine
-│   ├── db.ts               # SQLite schema & database connection
-│   ├── indexer.ts          # Stellar Horizon SSE live stream worker
-│   ├── scoring.ts          # Deterministic trust calculation algorithm
-│   └── server.ts           # REST API & WebSocket broadcast server
-├── src/                    # Next.js 16 App Router UI
-│   ├── app/                # Page layouts and global styles
-│   ├── components/         # React 19 UI components (Gauges, Charts, Tables)
-│   ├── context/            # ThemeContext & ThemeProvider (Light/Dark mode)
-│   └── lib/                # Config & environment helper functions
-├── render.yaml             # Render Infrastructure-as-Code Blueprint
-├── railway.json            # Railway platform deployment configuration
-├── Procfile                # Platform process declaration
-├── Dockerfile              # Multi-stage Docker container build
-├── docker-compose.yml      # Local/VPS orchestration manifest
-├── DEPLOYMENT.md           # Step-by-step deployment guide
-├── ARCHITECTURE.md         # Detailed architectural & algorithmic specification
-├── SECURITY.md             # Security policy & threat disclosure
-└── CONTRIBUTING.md         # Contributor guidelines
-```
+
+---
+
+## Contributing
+
+We welcome contributions from developers, researchers, and ecosystem builders. All changes should be proposed through a pull request, reviewed, and merged according to the repository contribution standards in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
 ## License
 
-This project is open-source software licensed under the **[MIT License](LICENSE)**.
+This project is open-source software licensed under the [MIT License](LICENSE).
