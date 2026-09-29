@@ -1,147 +1,121 @@
 # PulseLayer Future Plan
 
-This document outlines the strategic direction for PulseLayer as an open-source trust intelligence platform for the Stellar ecosystem. The goal is to make the project increasingly useful, understandable, and fundable through public review, ecosystem alignment, and strong technical execution.
+This is a delivery plan, not a promise of grant approval. It keeps PulseLayer focused on a public-good problem: making Stellar account behavior easier to inspect with open, reproducible, and clearly limited tooling.
 
----
+## Current baseline
 
-## Mission
+PulseLayer currently provides a TypeScript scoring engine, Horizon-backed account lookup, a SQLite index, REST and WebSocket interfaces, a Next.js dashboard, and deployment configurations. The score is a deterministic heuristic. The seed dataset includes generated development fixtures, so the next stage must improve provenance and evaluation before the system is used for consequential decisions.
 
-PulseLayer exists to make Stellar account behavior understandable, transparent, and operationally useful. It turns public blockchain activity into a clear, explainable trust signal that can help wallets, institutions, partners, and ecosystem participants better assess risk and activity quality.
+## Outcomes
 
----
+The roadmap is successful when a new user can:
 
-## Strategic focus
+- inspect why an account received a score
+- distinguish observed data from derived metrics and fixtures
+- reproduce a result locally
+- export evidence for a human review
+- understand the model's uncertainty and failure modes
+- integrate the API without relying on private keys or opaque services
 
-The project is designed around five pillars:
+## Milestones
 
-1. Trust signal clarity
-   - improve the readability and explainability of score outputs
-   - make scoring logic easier to audit and reason about
-   - ensure every score can be traced to concrete factors
+### M1: Reproducible evaluation and model transparency
 
-2. Security and reliability
-   - harden ingestion pipelines and failure recovery
-   - improve validation and operational resilience
-   - preserve the project’s read-only, non-custodial model
+Deliverables:
 
-3. Ecosystem usefulness
-   - support wallet screening workflows
-   - help monitor counterparty behavior and account quality
-   - provide value for compliance, analytics, and ecosystem observability use cases
+- versioned scoring fixtures covering ordinary, sparse, bursty, failed-operation, and missing-data accounts
+- automated tests for score bounds, signal deltas, thresholds, and risk-band transitions
+- a model card documenting intended use, non-goals, assumptions, known bias, and limitations
+- provenance fields that identify live Horizon data, derived values, and generated fixtures
 
-4. Open-source credibility
-   - keep project documentation clear and reviewer-friendly
-   - maintain reproducible architecture and deployment paths
-   - ensure changes are submitted through transparent pull requests
+Acceptance evidence:
 
-5. Funding readiness
-   - structure the project around public-good value and technical clarity
-   - document milestones, impact, and measurable outcomes
-   - maintain the repository in a state suitable for grant or ecosystem review
+- a clean checkout can run the evaluation command and reproduce the documented outputs
+- every score in the evaluation report can be traced to input fields and source type
+- a reviewer can identify at least one known false-positive and false-negative scenario
 
----
+### M2: Ingestion reliability and data quality
 
-## Near-term roadmap
+Deliverables:
 
-### Phase 1: Foundation and trustability
+- Horizon retry and backoff behavior with observable failure states
+- deduplication and idempotent indexing for ledgers, operations, and transactions
+- explicit handling for unavailable, unfunded, malformed, or stale account data
+- health metrics for ingestion lag, reconnects, records processed, and rejected records
 
-- refine score logic and signal explanations
-- harden API responses and docs
-- improve project structure clarity for reviewers
-- validate contributor workflow and PR process
-- ensure deployment paths are stable and reproducible
+Acceptance evidence:
 
-### Phase 2: Quality and reliability
+- controlled interruption and restart tests show no silent data corruption
+- the API reports data freshness and source status
+- ingestion errors are actionable without exposing internal secrets or stack traces
 
-- improve anomaly detection accuracy
-- strengthen historical scoring trend consistency
-- expand account-level analytics and filters
-- improve front-end usability and data presentation
-- formalize observability and operational metrics
+### M3: API and deployment hardening
 
-### Phase 3: Ecosystem integration
+Deliverables:
 
-- expose richer account analysis endpoints
-- support deeper wallet and risk workflows
-- add integrations for external analytics and compliance tooling
-- expand public dashboards and account investigation capabilities
+- documented API response contracts and input limits
+- rate limiting or a documented deployment-layer equivalent
+- configurable CORS, health checks, structured logs, and backup guidance
+- production deployment runbooks for the supported hosting paths
 
-### Phase 4: Sustainability and funding readiness
+Acceptance evidence:
 
-- document community value and technical impact
-- prepare for grant submissions and ecosystem review cycles
-- create stronger governance and maintainer guidance
-- improve contributor onboarding and documentation quality
+- API behavior is covered by smoke tests for success, invalid input, missing account, and upstream failure
+- a new operator can deploy the server and dashboard from the documented steps
+- the SQLite backup and restore path is tested and documented
 
----
+### M4: Ecosystem usability and feedback
 
-## Milestone themes
+Deliverables:
 
-The project should be evaluated by milestones that demonstrate tangible progress and ecosystem value:
+- an account investigation workflow that shows score, signals, source freshness, and history together
+- stable JSON export documentation and a small integration example
+- feedback from Stellar builders, analysts, and wallet or explorer teams
+- a public changelog of model and API changes
 
-- transparent and deterministic scoring improvements
-- improved risk classification quality
-- live monitoring reliability
-- deployment readiness across cloud environments
-- broader user adoption and onboarding support
-- stronger public documentation and contributor health
+Acceptance evidence:
 
-Each milestone should include:
+- at least three independent reviewers can complete the investigation workflow without maintainer assistance
+- feedback is recorded with decisions and follow-up issues
+- breaking API or scoring changes include migration notes
 
-- problem statement
-- expected outcome
-- implementation summary
-- verification evidence
-- risks and mitigations
+### M5: Sustainable open-source operation
 
----
+Deliverables:
 
-## Review criteria for funding and ecosystem alignment
+- maintainer and release responsibilities
+- issue triage labels and a lightweight decision record format
+- contributor onboarding improvements and recurring health checks
+- quarterly impact reports covering usage, reliability, evaluation results, and unresolved risks
 
-The repository should remain understandable to both humans and AI-assisted review systems by keeping the following visible and consistent:
+Acceptance evidence:
 
-- clearly defined problem and solution
-- specific and measurable project goals
-- transparent architectural choices
-- reproducible local setup and deployment paths
-- security-conscious implementation principles
-- active documentation and maintainer process
-- evidence-driven contribution and review flow
+- a contributor can reproduce the project from the README and submit a validated change
+- releases publish verification evidence and known limitations
+- project health is measured with public, non-sensitive metrics rather than inflated claims
 
-This structure supports broader public-interest, open-source, and ecosystem funding review standards.
+## Funding use and public outputs
 
----
+Potential funding from Stellar ecosystem programs, Drips-style public-good rounds, Grantfox, or other grant makers would be tied to the milestones above. The highest-leverage uses are engineering time for data quality and reliability, evaluation infrastructure, documentation, community testing, and modest hosting costs.
 
-## Governance direction
+Each funded work package should publish:
 
-As the project matures, governance should become clearer and more sustainable.
+- a scope and baseline
+- a named owner or accountable maintainer
+- a delivery date or review window
+- the code, report, dataset schema, or runbook produced
+- verification results and unresolved limitations
 
-Planned directions:
+Funding alignment is an objective, not an eligibility claim. Programs differ in criteria, geography, timing, application format, and definitions of public goods; those requirements must be checked at submission time.
 
-- define maintainer responsibilities
-- document review expectations for pull requests
-- establish issue triage and prioritization practices
-- standardize release and quality checks
-- make the project understandable to new contributors quickly
+## Non-goals
 
----
+PulseLayer will not become a custodial product, a private-key service, an opaque blacklist, or an automated replacement for legal, compliance, or human judgment. It will not describe a heuristic score as proof that an account or person is trustworthy.
 
-## Long-term vision
+## Governance and prioritization
 
-PulseLayer aspires to become a trusted public-good intelligence layer for Stellar account analysis. Over time, it may expand from a dashboard and score engine into a broader ecosystem tool for risk visibility, institutional review, and transparent network intelligence.
+Until a larger maintainer group exists, decisions are made through issues and pull requests. Priority goes to work that improves public usefulness, evidence quality, security, reliability, accessibility, or contributor independence. Model changes require an explanation of the affected signals and expected behavior; API changes require contract and migration notes.
 
-The long-term value will come from combining:
+## How progress is reported
 
-- strong public documentation
-- deterministic and explainable analytics
-- secure open-source practices
-- scalable technical architecture
-- a contributor model built for review and trust
-
----
-
-## Conclusion
-
-PulseLayer is not just a product idea; it is a reusable public utility for Stellar transparency and trust evaluation. The project’s value grows when it remains technically clear, reviewer-friendly, and built in an open and auditable way.
-
-The roadmap and repository structure are intentionally being kept aligned with that standard to support both ecosystem adoption and future funding opportunities.
+Each milestone update should include completed deliverables, commands or tests run, links to artifacts, current metrics, known limitations, and the next decision needed. This makes progress legible to users, contributors, grant reviewers, and automated repository analysis without substituting polished language for evidence.

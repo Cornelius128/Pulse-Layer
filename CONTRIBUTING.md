@@ -1,184 +1,116 @@
 # Contributing to PulseLayer
 
-Thank you for contributing to PulseLayer. This project is designed to be a transparent, open-source infrastructure layer for Stellar trust intelligence, and we expect contributions to reflect that standard.
+PulseLayer is an early-stage public-good project for transparent Stellar account analysis. Contributions are evaluated on correctness, reproducibility, security, user value, and how clearly a reviewer can verify the change.
 
-This repository is built for public review, reproducibility, and ecosystem value. Contributors should aim for clear implementation, careful validation, and documentation that supports both human review and AI-assisted evaluation.
+The project welcomes code, documentation, research, evaluation datasets, bug reports, and responsible challenge to the scoring assumptions. A contribution does not need to promote the score; showing where the model fails is valuable work.
 
----
+## Before opening an issue
 
-## Contribution principles
+Search existing issues and pull requests first. A useful issue includes:
 
-We value contributions that improve the project in ways that are:
+- the problem and affected user or ecosystem workflow
+- expected and observed behavior
+- reproduction steps or a minimal example
+- environment details and relevant logs
+- security, privacy, or data-provenance implications
 
-- technically sound
-- security-conscious
-- clear and well-documented
-- aligned with the project’s mission of transparent Stellar risk intelligence
-- easy to review through a pull request
+For scoring or data changes, include the account or fixture characteristics needed to reproduce the result. Do not publish private keys, secret seeds, personal data, or undisclosed vulnerability details.
 
-The default standard for any meaningful change is:
-
-- open discussion or issue tracking first when it is a feature or bug fix
-- a focused branch for the work
-- a pull request that explains the rationale, scope, and verification evidence
-
----
-
-## How to contribute
-
-### 1. Open or review an issue
-
-Before starting work, check whether the task is already discussed in the repository.
-
-Good issues include:
-
-- bug reports with reproduction steps
-- feature proposals with clear user value
-- technical debt or refactoring tasks
-- security concerns that need assessment
-- performance, reliability, or observability improvements
-
-When opening an issue, include:
-
-- the problem statement
-- expected behavior
-- actual behavior
-- reproduction steps
-- environment details (OS, Node version, browser if relevant)
-- screenshots or logs when helpful
-
-### 2. Fork and branch
+## Development
 
 ```bash
 git clone https://github.com/Justice989810/Pulse-Layer.git
 cd Pulse-Layer
-git checkout -b feature/your-change-name
-```
-
-Use concise, descriptive branch names such as:
-
-- `feature/scoring-threshold-tuning`
-- `fix/ledger-ingest-bug`
-- `docs/grant-readiness-update`
-- `refactor/api-response-structure`
-
----
-
-## Local development workflow
-
-```bash
 npm install
 npm run dev
 ```
 
-Relevant validation commands:
+Use a focused branch such as `feature/scoring-evaluation`, `fix/horizon-reconnect`, or `docs/api-contract`.
+
+Available checks:
 
 ```bash
-npm run build
 npm run lint
+npm run build
 ```
 
-If your change affects the analysis logic or API behavior, validate it with the most relevant local checks and document the output in your pull request.
+Run the narrowest relevant check while iterating. Changes that affect the server should also be exercised against `/api/stats`; changes to scoring should include representative inputs and expected outputs in the pull request. The development seed includes generated fixtures, so distinguish fixture validation from claims about live Stellar data.
 
----
+## Engineering standards
 
-## Coding expectations
+### Data and scoring
 
-We expect contributors to follow the project’s spirit and technical standards:
+- Keep scoring deterministic, bounded, and explainable.
+- Update the executable scoring logic and its documentation together.
+- Separate observed Horizon data, derived metrics, and generated fixtures.
+- Treat scores as screening signals, never as identity, fraud, credit, or compliance verdicts.
+- Describe false-positive, false-negative, and data-availability risks.
 
-- prefer clear and maintainable TypeScript
-- keep logic deterministic and explainable whenever possible
-- avoid unnecessary complexity
-- preserve security boundaries and read-only data access patterns
-- support accessibility and usability in the UI
-- document public-facing behavior and architecture changes
+### Backend and security
 
-### Backend expectations
+- Use prepared statements for SQLite queries.
+- Validate account identifiers and query parameters at the boundary.
+- Preserve the read-only, non-custodial model.
+- Avoid logging secrets or unnecessary account data.
+- Update [`SECURITY.md`](SECURITY.md) when security assumptions change.
 
-- use parameterized queries for SQLite operations
-- avoid exposing sensitive data or unsafe runtime behavior
-- keep API responses consistent and predictable
-- validate assumptions around network data before merging
+### Frontend and accessibility
 
-### Frontend expectations
+- Keep account evidence understandable to non-specialist reviewers.
+- Preserve responsive behavior, keyboard access, and clear loading/error states.
+- Avoid presenting a score without its relevant context and limitations.
 
-- maintain simple, readable component structure
-- keep the dashboard responsive and compatible with dark/light themes
-- ensure the UI remains understandable to users who are not technical experts
+### Documentation
 
-### Documentation expectations
+Update documentation in the same pull request when behavior, API contracts, deployment, architecture, security, or roadmap commitments change. Prefer concrete examples and acceptance criteria over marketing language.
 
-If your change alters user workflows, architecture, security assumptions, or project value, update the relevant documentation in the same pull request.
+## Pull requests
 
----
+Every substantive change should use a focused pull request. The description should answer:
 
-## Pull request standards
+1. What problem does this solve?
+2. What changed and what is deliberately out of scope?
+3. How was it verified?
+4. What evidence, data, or assumptions does it rely on?
+5. What risks, limitations, or follow-up work remain?
 
-All substantive changes should be submitted as a pull request.
+Before requesting review:
 
-The pull request should include:
+- [ ] the branch contains only related changes
+- [ ] `npm run lint` passes
+- [ ] `npm run build` passes when applicable
+- [ ] behavior was checked with a focused command or reproducible example
+- [ ] documentation and API details are current
+- [ ] no secrets, credentials, or unlicensed data were added
+- [ ] security and data-provenance implications are stated
 
-1. A clear title describing the change
-2. A summary of the problem and the solution
-3. The files affected
-4. Verification steps and evidence
-5. Any risks, follow-up tasks, or open questions
-
-### PR checklist
-
-Before requesting review, confirm:
-
-- [ ] the branch is focused and scoped
-- [ ] the code builds successfully
-- [ ] relevant validation checks have been run
-- [ ] documentation was updated if needed
-- [ ] the change is easy to review and explain
-- [ ] no secrets or sensitive credentials were added
-
-### Suggested PR template
+Suggested description:
 
 ```md
-## Summary
-Describe the issue and the reason for the change.
+## Problem
 
-## What changed
-- bullet list of updates
+## Change
 
-## Why this matters
-Explain the user, technical, or ecosystem impact.
+## Public or ecosystem value
 
 ## Verification
-- `npm run build`
 - `npm run lint`
-- any additional manual validation
+- `npm run build`
+- focused manual or data check
 
-## Notes
-Mention follow-up items or risk areas.
+## Limitations and follow-up
 ```
 
----
+## Review and decision making
 
-## Review expectations
+Reviewers should prioritize correctness, reproducibility, security, accessibility, maintainability, and measurable ecosystem value. Review comments should be specific and actionable. Maintainers may request a smaller scope, additional evidence, or a documentation change before merging.
 
-Contributors should be prepared for constructive feedback. Good review conversations focus on:
-
-- correctness
-- clarity
-- maintainability
-- security
-- real user value
-- fit with the project mission
-
-We aim for quality over speed and for open review over opaque approval.
-
----
+Roadmap work is prioritized by public usefulness, evidence quality, reliability, contributor accessibility, and available maintenance capacity. Funding or grant alignment never replaces technical review.
 
 ## Security reporting
 
-If you discover a vulnerability, please do not open a public issue that exposes the details. Use the repository security reporting process and follow the guidance in [SECURITY.md](SECURITY.md).
+Do not open a public issue for an exploitable vulnerability. Follow [`SECURITY.md`](SECURITY.md) and provide affected components, reproduction steps, impact, and a suggested mitigation where possible. Remove secrets from logs and examples before sharing them.
 
----
+## License
 
-## Final note
-
-PulseLayer is a public utility project with value to the Stellar ecosystem. Contributions that improve trust, usability, reliability, and transparency are especially welcome. We expect contributors to work in the open, document their reasoning, and submit changes in reviewable pull requests.
+By contributing, you agree that your contribution is provided under the repository's [MIT License](LICENSE).
