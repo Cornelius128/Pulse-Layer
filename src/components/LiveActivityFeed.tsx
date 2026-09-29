@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, Zap, Radio, Pause, Play } from 'lucide-react';
 import { getApiUrl, getWsUrl } from '@/lib/config';
 import { fetchApiJson, isRecord } from '@/lib/api';
@@ -43,6 +43,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
   const [feed, setFeed] = useState<any[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const [connected, setConnected] = useState(false);
+  const isPausedRef = useRef(false);
 
   // Initial Fetch & WebSocket setup
   useEffect(() => {
@@ -55,13 +56,16 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
 
     // Connect WebSocket
     const ws = new WebSocket(getWsUrl());
+    const pollTimer = setInterval(() => {
+      if (ws.readyState !== WebSocket.OPEN) void fetchFeed();
+    }, 5000);
 
     ws.onopen = () => {
       setConnected(true);
     };
 
     ws.onmessage = (event) => {
-      if (isPaused) return;
+      if (isPausedRef.current) return;
       try {
         const payload = JSON.parse(event.data);
         if (payload.type === 'LIVE_TRANSACTION') {
@@ -75,9 +79,11 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
     ws.onclose = () => setConnected(false);
 
     return () => {
+      clearInterval(pollTimer);
+      controller.abort();
       ws.close();
     };
-  }, [isPaused]);
+  }, []);
 
   return (
     <div className="metallic-card rounded-2xl p-6 flex flex-col justify-between min-h-[420px] font-mono-tech">
@@ -100,7 +106,13 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsPaused(!isPaused)}
+            onClick={() => {
+              setIsPaused((paused) => {
+                const nextPaused = !paused;
+                isPausedRef.current = nextPaused;
+                return nextPaused;
+              });
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-electric)] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
           >
             {isPaused ? <Play className="w-3 h-3 text-[var(--accent-emerald)]" /> : <Pause className="w-3 h-3 text-[var(--accent-amber)]" />}
@@ -118,10 +130,19 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
             : 'NOW';
 
           return (
-            <div
+            <button
+              type="button"
               key={item.id || idx}
+              role="button"
+              tabIndex={0}
               onClick={() => onSelectAccount(item.account_id)}
-              className={`p-3 rounded-lg border transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+              onKeyDown={(event) => {
+                if ((event.key === 'Enter' || event.key === ' ') && !event.repeat) {
+                  event.preventDefault();
+                  onSelectAccount(item.account_id);
+                }
+              }}
+              className={`p-3 rounded-lg border transition-all cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-electric)] ${
                 isAnomaly
                   ? 'bg-[var(--accent-amber)]/10 border-[var(--accent-amber)]/40 hover:border-[var(--accent-amber)] shadow-md shadow-[#F59E0B]/5'
                   : 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] hover:border-[var(--accent-electric)]'
@@ -145,7 +166,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
                     </span>
                   </div>
                   <p className="text-[10px] text-[var(--text-muted)] truncate">
-                    Hash: {item.hash || '0x49f2...81a'}
+                    Hash: {item.hash || 'Unavailable'}
                   </p>
                 </div>
               </div>
@@ -154,7 +175,10 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
               <div className="flex items-center justify-between sm:justify-end gap-3 text-right">
                 <div>
                   <span className="text-xs font-bold text-[var(--text-primary)] block">
-                    +{item.amount || '100.00'} {item.asset || 'XLM'}
+                    {item.amount !== undefined && item.amount !== null && item.amount !== ''
+                      ? item.amount
+                      : 'Amount unavailable'}{' '}
+                    {item.asset || 'Asset unavailable'}
                   </span>
                   <span className="text-[10px] text-[var(--text-muted)]">{dateStr}</span>
                 </div>
@@ -165,7 +189,7 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
                   </span>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
