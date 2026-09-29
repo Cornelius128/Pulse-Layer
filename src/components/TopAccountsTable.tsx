@@ -10,6 +10,27 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { getApiUrl } from '@/lib/config';
+import { fetchApiJson, isRecord } from '@/lib/api';
+
+type TopAccountsResponse = {
+  accounts: Record<string, unknown>[];
+  total: number;
+};
+
+const isTopAccountsResponse = (value: unknown): value is TopAccountsResponse =>
+  isRecord(value) &&
+  typeof value.total === 'number' &&
+  Array.isArray(value.accounts) &&
+  value.accounts.every((account) =>
+    isRecord(account) &&
+    typeof account.account === 'string' &&
+    typeof account.score === 'number' &&
+    typeof account.trend === 'string' &&
+    typeof account.tx_count === 'number' &&
+    typeof account.lifespan_days === 'number' &&
+    typeof account.risk_level === 'string' &&
+    typeof account.anomaly_flag === 'boolean',
+  );
 
 interface TopAccountsTableProps {
   onSelectAccount: (account: string) => void;
@@ -37,13 +58,10 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
     });
     if (searchQuery) params.set('search', searchQuery);
 
-    fetch(`${getApiUrl()}/api/top?${params.toString()}`)
-      .then((res) => res.json())
+    fetchApiJson(`${getApiUrl()}/api/top?${params.toString()}`, isTopAccountsResponse)
       .then((data) => {
-        if (data.accounts) {
-          setAccounts(data.accounts);
-          setTotal(data.total);
-        }
+        setAccounts(data.accounts);
+        setTotal(data.total);
         setLoading(false);
       })
       .catch((err) => {

@@ -3,6 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Zap, Radio, Pause, Play } from 'lucide-react';
 import { getApiUrl, getWsUrl } from '@/lib/config';
+import { fetchApiJson, isRecord } from '@/lib/api';
+
+type FeedResponse = { transactions: Record<string, unknown>[] };
+
+const isFeedResponse = (value: unknown): value is FeedResponse =>
+  isRecord(value) &&
+  Array.isArray(value.transactions) &&
+  value.transactions.every((transaction) =>
+    isRecord(transaction) && typeof transaction.account_id === 'string',
+  );
 
 interface LiveActivityFeedProps {
   onSelectAccount: (account: string) => void;
@@ -18,12 +28,9 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
   // Initial Fetch & WebSocket setup
   useEffect(() => {
     // Initial Rest Fetch
-    fetch(`${getApiUrl()}/api/feed`)
-      .then((res) => res.json())
+    fetchApiJson(`${getApiUrl()}/api/feed`, isFeedResponse)
       .then((data) => {
-        if (data.transactions) {
-          setFeed(data.transactions);
-        }
+        setFeed(data.transactions);
       })
       .catch((err) => console.error('Feed fetch error:', err));
 

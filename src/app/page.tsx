@@ -13,8 +13,54 @@ import {
 } from 'lucide-react';
 
 import { getApiUrl } from '@/lib/config';
+import { fetchApiJson, isRecord } from '@/lib/api';
 
 const DEMO_ACCOUNT_DEFAULT = 'GAK6E46MRRAG72MNDHNE54F2M43MVTK4Z2X7MHBCEEE4ZJ32FGGXX444';
+
+type StatsResponse = {
+  total_accounts: number;
+  avg_trust_score: number;
+  last_ledger: string;
+  network_tps: string;
+  anomalies_count: number;
+};
+
+type ScoreResponse = Record<string, unknown> & {
+  account: string;
+  score: number;
+  trend: string;
+  confidence: number;
+  risk_level: string;
+};
+
+type HistoryResponse = {
+  snapshots: { score: number; timestamp: string }[];
+};
+
+const isStatsResponse = (value: unknown): value is StatsResponse =>
+  isRecord(value) &&
+  typeof value.total_accounts === 'number' &&
+  typeof value.avg_trust_score === 'number' &&
+  typeof value.last_ledger === 'string' &&
+  typeof value.network_tps === 'string' &&
+  typeof value.anomalies_count === 'number';
+
+const isScoreResponse = (value: unknown): value is ScoreResponse =>
+  isRecord(value) &&
+  typeof value.account === 'string' &&
+  typeof value.score === 'number' &&
+  typeof value.trend === 'string' &&
+  typeof value.confidence === 'number' &&
+  typeof value.risk_level === 'string';
+
+const isHistoryResponse = (value: unknown): value is HistoryResponse =>
+  isRecord(value) &&
+  Array.isArray(value.snapshots) &&
+  value.snapshots.every((snapshot) =>
+    isRecord(snapshot) &&
+    typeof snapshot.score === 'number' &&
+    typeof snapshot.timestamp === 'string',
+  );
 
 export default function Home() {
   const [stats, setStats] = useState<any>(null);
@@ -27,8 +73,7 @@ export default function Home() {
 
   // Fetch System Stats
   const fetchStats = () => {
-    fetch(`${getApiUrl()}/api/stats`)
-      .then((res) => res.json())
+    fetchApiJson(`${getApiUrl()}/api/stats`, isStatsResponse)
       .then((data) => setStats(data))
       .catch((err) => console.error('Stats fetch error:', err));
   };
@@ -40,8 +85,8 @@ export default function Home() {
 
     const apiUrl = getApiUrl();
     Promise.all([
-      fetch(`${apiUrl}/api/score/${acc}`).then((r) => r.json()),
-      fetch(`${apiUrl}/api/history/${acc}`).then((r) => r.json()),
+      fetchApiJson(`${apiUrl}/api/score/${acc}`, isScoreResponse),
+      fetchApiJson(`${apiUrl}/api/history/${acc}`, isHistoryResponse),
     ])
       .then(([scoreRes, historyRes]) => {
         setScoreData(scoreRes);
@@ -62,8 +107,7 @@ export default function Home() {
   }, []);
 
   const handleInspectAccount = (acc: string) => {
-    fetch(`${getApiUrl()}/api/score/${acc}`)
-      .then((res) => res.json())
+    fetchApiJson(`${getApiUrl()}/api/score/${acc}`, isScoreResponse)
       .then((data) => setModalAccountData(data))
       .catch((err) => console.error(err));
   };
