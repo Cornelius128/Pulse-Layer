@@ -106,6 +106,8 @@ Where:
    * **Express REST API**: `http://localhost:5001/api/stats`
    * **WebSocket Stream**: `ws://localhost:5001/ws`
 
+SQLite foreign-key constraints are enforced when the database connection starts. Run the focused database checks with `npm test`.
+
 ---
 
 ## Deployment Guide
