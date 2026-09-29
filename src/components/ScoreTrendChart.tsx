@@ -76,67 +76,67 @@ export const ScoreTrendChart: React.FC<ScoreTrendChartProps> = ({
       </div>
 
       {/* Recharts Curve */}
-      <div className="w-full h-64">
-        {snapshots.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-sm text-[var(--text-secondary)]">
-            No score history available yet.
-          </div>
+      <div className="w-full h-64 flex items-center justify-center">
+        {filteredData.length === 0 ? (
+          <p className="text-sm font-mono-tech text-[var(--text-secondary)]">
+            No score history available for this account.
+          </p>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={strokeColor} stopOpacity={0.4} />
-                  <stop offset="95%" stopColor={strokeColor} stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
+          <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={strokeColor} stopOpacity={0.4} />
+                <stop offset="95%" stopColor={strokeColor} stopOpacity={0.0} />
+              </linearGradient>
+            </defs>
 
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
 
-              <XAxis
-                dataKey="date"
-                stroke={textColor}
-                tick={{ fontSize: 11, fontFamily: 'monospace' }}
-                tickLine={false}
-                axisLine={{ stroke: gridColor }}
-              />
+            <XAxis
+              dataKey="date"
+              stroke={textColor}
+              tick={{ fontSize: 11, fontFamily: 'monospace' }}
+              tickLine={false}
+              axisLine={{ stroke: gridColor }}
+            />
 
-              <YAxis
-                domain={[0, 100]}
-                ticks={[0, 25, 50, 75, 100]}
-                stroke={textColor}
-                tick={{ fontSize: 11, fontFamily: 'monospace' }}
-                tickLine={false}
-                axisLine={{ stroke: gridColor }}
-              />
+            <YAxis
+              domain={[0, 100]}
+              ticks={[0, 25, 50, 75, 100]}
+              stroke={textColor}
+              tick={{ fontSize: 11, fontFamily: 'monospace' }}
+              tickLine={false}
+              axisLine={{ stroke: gridColor }}
+            />
 
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    return (
-                      <div className="bg-[var(--bg-secondary)] border border-[var(--accent-electric)] p-3 rounded-lg shadow-xl font-mono-tech text-xs">
-                        <p className="text-[var(--text-secondary)] mb-1">{data.fullDate}</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[var(--text-secondary)]">Pulse Score:</span>
-                          <span className="text-[var(--accent-electric)] font-bold text-sm">{data.score} / 100</span>
-                        </div>
+            <Tooltip
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-[var(--bg-secondary)] border border-[var(--accent-electric)] p-3 rounded-lg shadow-xl font-mono-tech text-xs">
+                      <p className="text-[var(--text-secondary)] mb-1">{data.fullDate}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[var(--text-secondary)]">Pulse Score:</span>
+                        <span className="text-[var(--accent-electric)] font-bold text-sm">{data.score} / 100</span>
                       </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
 
-              <Area
-                type="monotone"
-                dataKey="score"
-                stroke={strokeColor}
-                strokeWidth={2.5}
-                fillOpacity={1}
-                fill="url(#scoreGradient)"
-              />
-            </AreaChart>
+            <Area
+              type="monotone"
+              dataKey="score"
+              stroke={strokeColor}
+              strokeWidth={2.5}
+              fillOpacity={1}
+              fill="url(#scoreGradient)"
+            />
+          </AreaChart>
           </ResponsiveContainer>
         )}
       </div>
