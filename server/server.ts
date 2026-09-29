@@ -139,17 +139,6 @@ app.get('/api/history/:account', (req, res) => {
   try {
     const { account } = req.params;
     const snapshots = db.prepare('SELECT score, timestamp FROM score_snapshots WHERE account_id = ? ORDER BY timestamp ASC').all(account);
-
-    if (snapshots.length === 0) {
-      // Fallback timeline for demonstration
-      const now = Date.now();
-      const mockSnapshots = Array.from({ length: 15 }, (_, i) => ({
-        score: Math.min(100, Math.max(20, Math.round(50 + Math.sin(i / 2) * 15 + i))),
-        timestamp: new Date(now - (15 - i) * 86400000).toISOString(),
-      }));
-      return res.json({ account, snapshots: mockSnapshots });
-    }
-
     res.json({ account, snapshots });
   } catch (err: any) {
     res.setHeader('Cache-Control', 'no-store').status(500).json({ error: err.message });
