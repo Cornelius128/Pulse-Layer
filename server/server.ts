@@ -12,6 +12,13 @@ const PORT = Number(process.env.PORT) || 5001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 const corsOrigin = process.env.CORS_ORIGIN || '*';
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-XSS-Protection', '0');
+  next();
+});
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 
