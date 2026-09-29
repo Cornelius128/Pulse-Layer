@@ -130,7 +130,7 @@ PulseLayer is configured for instant cloud deployment. Read the comprehensive **
 | `GET` | `/api/history/:account` | Historical score snapshot timeline for charts |
 | `GET` | `/api/top` | Paginated directory of indexed Stellar accounts with risk filtering |
 | `GET` | `/api/feed` | Recent indexed Stellar operations feed |
-| `GET` | `/api/export/:account` | Download full structured JSON audit payload for an account |
+| `GET` | `/api/export/:account` | Download structured JSON for a valid, indexed Stellar account; returns `400` for invalid addresses and `404` when the account is not indexed |
 
 ### WebSocket API
 * **Endpoint**: `/ws`
