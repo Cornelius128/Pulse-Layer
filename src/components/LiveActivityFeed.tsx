@@ -3,6 +3,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, Zap, Radio, Pause, Play } from 'lucide-react';
 import { getApiUrl, getWsUrl } from '@/lib/config';
+import { fetchApiJson, isRecord } from '@/lib/api';
+
+type FeedResponse = { transactions: Record<string, unknown>[] };
+
+const isFeedResponse = (value: unknown): value is FeedResponse =>
+  isRecord(value) &&
+  Array.isArray(value.transactions) &&
+  value.transactions.every((transaction) =>
+    isRecord(transaction) && typeof transaction.account_id === 'string',
+  );
 
 interface LiveActivityFeedProps {
   onSelectAccount: (account: string) => void;
@@ -37,32 +47,12 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
 
   // Initial Fetch & WebSocket setup
   useEffect(() => {
-    const controller = new AbortController();
-    let requestInProgress = false;
-    const fetchFeed = async () => {
-      if (requestInProgress || isPausedRef.current) return;
-      requestInProgress = true;
-      try {
-        const response = await fetch(`${getApiUrl()}/api/feed`, {
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error(`Feed request failed: ${response.status}`);
-        const data = await response.json();
-        if (
-          !controller.signal.aborted &&
-          !isPausedRef.current &&
-          Array.isArray(data.transactions)
-        ) {
-          setFeed((current) => mergeFeed(current, data.transactions));
-        }
-      } catch (err) {
-        if (!controller.signal.aborted) console.error('Feed fetch error:', err);
-      } finally {
-        requestInProgress = false;
-      }
-    };
-
-    void fetchFeed();
+    // Initial Rest Fetch
+    fetchApiJson(`${getApiUrl()}/api/feed`, isFeedResponse)
+      .then((data) => {
+        setFeed(data.transactions);
+      })
+      .catch((err) => console.error('Feed fetch error:', err));
 
     // Connect WebSocket
     const ws = new WebSocket(getWsUrl());
