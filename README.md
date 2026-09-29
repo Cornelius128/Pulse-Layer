@@ -132,6 +132,8 @@ PulseLayer is configured for instant cloud deployment. Read the comprehensive **
 | `GET` | `/api/feed` | Recent indexed Stellar operations feed |
 | `GET` | `/api/export/:account` | Download full structured JSON audit payload for an account |
 
+The Express API applies `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and a restrictive `Content-Security-Policy` to HTTP responses. CORS remains configurable through `CORS_ORIGIN`.
+
 ### WebSocket API
 * **Endpoint**: `/ws`
 * **Event Payload**:
