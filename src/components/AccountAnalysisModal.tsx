@@ -122,12 +122,7 @@ export const AccountAnalysisModal: React.FC<AccountAnalysisModalProps> = ({
     window.open(`${getApiUrl()}/api/export/${accountData.account}`, '_blank');
   };
 
-  const breakdown = accountData.breakdown || {
-    consistency: 75,
-    lifespan: 80,
-    interaction_quality: 70,
-    risk_exposure: 85,
-  };
+  const breakdown = accountData.breakdown;
 
   const signals = accountData.signals || [];
 
@@ -292,12 +287,14 @@ export const AccountAnalysisModal: React.FC<AccountAnalysisModalProps> = ({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="text-[var(--text-secondary)]">Consistency Factor</span>
-                    <span className="text-[var(--text-primary)] font-bold">{breakdown.consistency}%</span>
+                    <span className="text-[var(--text-primary)] font-bold">
+                      {breakdown?.consistency == null ? 'Unavailable' : `${breakdown.consistency}%`}
+                    </span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] overflow-hidden">
                     <div
                       className="h-full bg-[var(--accent-electric)] transition-all"
-                      style={{ width: `${breakdown.consistency}%` }}
+                      style={{ width: `${breakdown?.consistency ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -306,12 +303,14 @@ export const AccountAnalysisModal: React.FC<AccountAnalysisModalProps> = ({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="text-[var(--text-secondary)]">Lifespan Maturity</span>
-                    <span className="text-[var(--text-primary)] font-bold">{breakdown.lifespan}%</span>
+                    <span className="text-[var(--text-primary)] font-bold">
+                      {breakdown?.lifespan == null ? 'Unavailable' : `${breakdown.lifespan}%`}
+                    </span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] overflow-hidden">
                     <div
                       className="h-full bg-[var(--accent-emerald)] transition-all"
-                      style={{ width: `${breakdown.lifespan}%` }}
+                      style={{ width: `${breakdown?.lifespan ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -320,12 +319,16 @@ export const AccountAnalysisModal: React.FC<AccountAnalysisModalProps> = ({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="text-[var(--text-secondary)]">Interaction Quality</span>
-                    <span className="text-[var(--text-primary)] font-bold">{breakdown.interaction_quality}%</span>
+                    <span className="text-[var(--text-primary)] font-bold">
+                      {breakdown?.interaction_quality == null
+                        ? 'Unavailable'
+                        : `${breakdown.interaction_quality}%`}
+                    </span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] overflow-hidden">
                     <div
                       className="h-full bg-[var(--accent-blue)] transition-all"
-                      style={{ width: `${breakdown.interaction_quality}%` }}
+                      style={{ width: `${breakdown?.interaction_quality ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -334,12 +337,16 @@ export const AccountAnalysisModal: React.FC<AccountAnalysisModalProps> = ({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="text-[var(--text-secondary)]">Safety Rating</span>
-                    <span className="text-[var(--text-primary)] font-bold">{breakdown.risk_exposure}%</span>
+                    <span className="text-[var(--text-primary)] font-bold">
+                      {breakdown?.risk_exposure == null
+                        ? 'Unavailable'
+                        : `${breakdown.risk_exposure}%`}
+                    </span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] overflow-hidden">
                     <div
                       className="h-full bg-[var(--accent-amber)] transition-all"
-                      style={{ width: `${breakdown.risk_exposure}%` }}
+                      style={{ width: `${breakdown?.risk_exposure ?? 0}%` }}
                     />
                   </div>
                 </div>
