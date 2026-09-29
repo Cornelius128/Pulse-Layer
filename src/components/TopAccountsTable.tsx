@@ -24,7 +24,7 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [riskFilter, setRiskFilter] = useState('ALL');
-  const [sort] = useState('score_desc');
+  const [sort, setSort] = useState('score_desc');
   const [loading, setLoading] = useState(false);
 
   const fetchAccounts = () => {
@@ -69,30 +69,46 @@ export const TopAccountsTable: React.FC<TopAccountsTableProps> = ({
           </h3>
         </div>
 
-        {/* Risk Filter Tabs */}
-        <div className="flex items-center gap-1 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--border-subtle)] overflow-x-auto">
-          {[
-            { id: 'ALL', label: 'All Accounts' },
-            { id: 'LOW', label: 'Low Risk (80-100)' },
-            { id: 'MODERATE', label: 'Moderate' },
-            { id: 'HIGH', label: 'High Risk' },
-            { id: 'CRITICAL', label: 'Critical' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setRiskFilter(tab.id);
-                setPage(1);
-              }}
-              className={`px-3 py-1 text-xs rounded transition-all whitespace-nowrap cursor-pointer ${
-                riskFilter === tab.id
-                  ? 'bg-[var(--accent-electric)] text-black font-bold shadow-md'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Risk Filters and Sort */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex items-center gap-1 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--border-subtle)] overflow-x-auto">
+            {[
+              { id: 'ALL', label: 'All Accounts' },
+              { id: 'LOW', label: 'Low Risk (80-100)' },
+              { id: 'MODERATE', label: 'Moderate' },
+              { id: 'HIGH', label: 'High Risk' },
+              { id: 'CRITICAL', label: 'Critical' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setRiskFilter(tab.id);
+                  setPage(1);
+                }}
+                className={`px-3 py-1 text-xs rounded transition-all whitespace-nowrap cursor-pointer ${
+                  riskFilter === tab.id
+                    ? 'bg-[var(--accent-electric)] text-black font-bold shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <select
+            aria-label="Sort accounts"
+            value={sort}
+            onChange={(event) => {
+              setSort(event.target.value);
+              setPage(1);
+            }}
+            className="px-3 py-1.5 text-xs rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-primary)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-electric)]"
+          >
+            <option value="score_desc">Highest score</option>
+            <option value="score_asc">Lowest score</option>
+            <option value="tx_desc">Most transactions</option>
+            <option value="lifespan_desc">Longest lifespan</option>
+          </select>
         </div>
       </div>
 
