@@ -36,6 +36,8 @@ export default function Home() {
   // Fetch Account Score Data
   const fetchAccountData = (acc: string) => {
     setLoading(true);
+    setScoreData(null);
+    setHistoryData([]);
     setSelectedAccount(acc);
 
     const apiUrl = getApiUrl();
@@ -116,12 +118,13 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Pulse Score Display */}
           <PulseGauge
-            score={scoreData?.score || 50}
-            trend={scoreData?.trend || 'stable'}
-            confidence={scoreData?.confidence || 0.85}
+            score={scoreData?.score ?? null}
+            trend={scoreData?.trend ?? null}
+            confidence={scoreData?.confidence ?? null}
             anomalyFlag={Boolean(scoreData?.anomaly_flag)}
-            riskLevel={scoreData?.risk_level || 'MODERATE'}
+            riskLevel={scoreData?.risk_level ?? null}
             account={selectedAccount}
+            loading={loading}
           />
 
           {/* Right: Score Trend Curve */}
