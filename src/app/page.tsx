@@ -19,6 +19,7 @@ const DEMO_ACCOUNT_DEFAULT = 'GAK6E46MRRAG72MNDHNE54F2M43MVTK4Z2X7MHBCEEE4ZJ32FG
 export default function Home() {
   const [stats, setStats] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [accountsPage, setAccountsPage] = useState(1);
   const [selectedAccount, setSelectedAccount] = useState(DEMO_ACCOUNT_DEFAULT);
   const [scoreData, setScoreData] = useState<any>(null);
   const [historyData, setHistoryData] = useState<any[]>([]);
@@ -40,6 +41,8 @@ export default function Home() {
     const controller = new AbortController();
     accountRequestController.current = controller;
     setLoading(true);
+    setScoreData(null);
+    setHistoryData([]);
     setSelectedAccount(acc);
 
     const apiUrl = getApiUrl();
@@ -83,7 +86,10 @@ export default function Home() {
       <Header
         stats={stats}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={(query) => {
+          setSearchQuery(query);
+          setAccountsPage(1);
+        }}
         onSearchSubmit={fetchAccountData}
         onRefresh={() => {
           fetchStats();
@@ -125,12 +131,13 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Pulse Score Display */}
           <PulseGauge
-            score={scoreData?.score || 50}
-            trend={scoreData?.trend || 'stable'}
-            confidence={scoreData?.confidence || 0.85}
+            score={scoreData?.score ?? null}
+            trend={scoreData?.trend ?? null}
+            confidence={scoreData?.confidence ?? null}
             anomalyFlag={Boolean(scoreData?.anomaly_flag)}
-            riskLevel={scoreData?.risk_level || 'MODERATE'}
+            riskLevel={scoreData?.risk_level ?? null}
             account={selectedAccount}
+            loading={loading}
           />
 
           {/* Right: Score Trend Curve */}
@@ -212,6 +219,8 @@ export default function Home() {
         <TopAccountsTable
           onSelectAccount={fetchAccountData}
           searchQuery={searchQuery}
+          page={accountsPage}
+          onPageChange={setAccountsPage}
         />
       </main>
 

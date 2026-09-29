@@ -4,6 +4,7 @@ import http from 'http';
 import { StrKey } from '@stellar/stellar-sdk';
 import { WebSocketServer, WebSocket } from 'ws';
 import { db } from './db';
+import { apiCachePolicy } from './cache-policy';
 import { seedAccountsDatabase, startHorizonLiveStream, indexerEvents, DEMO_WELL_KNOWN_ACCOUNTS, getOrFetchStellarAccount } from './indexer';
 import { calculateTrustScore, AccountRawData } from './scoring';
 
@@ -21,6 +22,7 @@ app.use((_req, res, next) => {
 });
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
+app.use(apiCachePolicy);
 
 // Initialize HTTP server & WebSockets
 const server = http.createServer(app);
@@ -72,7 +74,7 @@ app.get('/api/stats', (req, res) => {
       last_updated: new Date().toISOString(),
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+      res.status(500).json({ error: err.message });
   }
 });
 
@@ -126,7 +128,7 @@ app.get('/api/score/:account', async (req, res) => {
 
     res.json(calculated);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.setHeader('Cache-Control', 'no-store').status(500).json({ error: err.message });
   }
 });
 
@@ -137,20 +139,9 @@ app.get('/api/history/:account', (req, res) => {
   try {
     const { account } = req.params;
     const snapshots = db.prepare('SELECT score, timestamp FROM score_snapshots WHERE account_id = ? ORDER BY timestamp ASC').all(account);
-
-    if (snapshots.length === 0) {
-      // Fallback timeline for demonstration
-      const now = Date.now();
-      const mockSnapshots = Array.from({ length: 15 }, (_, i) => ({
-        score: Math.min(100, Math.max(20, Math.round(50 + Math.sin(i / 2) * 15 + i))),
-        timestamp: new Date(now - (15 - i) * 86400000).toISOString(),
-      }));
-      return res.json({ account, snapshots: mockSnapshots });
-    }
-
     res.json({ account, snapshots });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.setHeader('Cache-Control', 'no-store').status(500).json({ error: err.message });
   }
 });
 

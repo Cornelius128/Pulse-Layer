@@ -81,6 +81,7 @@ async function runTests() {
     console.log('✅ /api/stats includes the baseline security headers.');
     const statsRes = await statsResponse.json();
     console.log('✅ /api/stats:', statsRes);
+    console.log('✅ API security headers are present.');
 
     const topRes = await fetch('http://localhost:5001/api/top?limit=3').then((r) => r.json());
     console.log('✅ /api/top:', { total: topRes.total, returned: topRes.accounts.length });
