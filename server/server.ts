@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import { StrKey } from '@stellar/stellar-sdk';
 import { WebSocketServer, WebSocket } from 'ws';
 import { db } from './db';
 import { apiCachePolicy } from './cache-policy';
@@ -12,6 +13,13 @@ const PORT = Number(process.env.PORT) || 5001;
 const HOST = process.env.HOST || '0.0.0.0';
 
 const corsOrigin = process.env.CORS_ORIGIN || '*';
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-XSS-Protection', '0');
+  next();
+});
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 app.use(apiCachePolicy);
@@ -254,6 +262,10 @@ app.get('/api/feed', (req, res) => {
 app.get('/api/export/:account', (req, res) => {
   try {
     const { account } = req.params;
+    if (!StrKey.isValidEd25519PublicKey(account)) {
+      return res.status(400).json({ error: 'Invalid Stellar account address' });
+    }
+
     const accountRow = db.prepare('SELECT * FROM accounts WHERE account_id = ?').get(account) as any;
     const snapshots = db.prepare('SELECT score, timestamp FROM score_snapshots WHERE account_id = ? ORDER BY timestamp ASC').all(account);
     const txs = db.prepare('SELECT * FROM transactions WHERE account_id = ? ORDER BY created_at DESC LIMIT 20').all(account);
@@ -294,7 +306,7 @@ app.get('/api/export/:account', (req, res) => {
     };
 
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename=pulselayer_${account.slice(0, 8)}.json`);
+    res.setHeader('Content-Disposition', `attachment; filename="pulselayer_${account.slice(0, 8)}.json"`);
     res.send(JSON.stringify(exportPayload, null, 2));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
